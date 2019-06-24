@@ -14,7 +14,7 @@ class WumpusGame(commands.Cog):
 
 
     @commands.command()
-    async def play(self, ctx):
+    async def play(self, ctx, difficulty="normal"):
         embed = discord.Embed(
             title="**Welcome to the Wumpus Game!**",
             description='''*Wumpus is stuck on Discord Island and needs help to go free! You need to tell the Discord staff team where to go to save Wumpus!*
@@ -29,7 +29,14 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
         async with ctx.typing():
             # Open images
             wumpus = Image.open(os.path.join('images', 'WumpusLove.png'))
-            wumpus = wumpus.resize((800, 800))
+            if difficulty.lower() == "easy":
+                wumpus = wumpus.resize((1200, 1200))
+            elif difficulty.lower() == "normal":
+                wumpus = wumpus.resize((750, 750))
+            elif difficulty.lower() == "hard":
+                wumpus = wumpus.resize((500, 500))
+
+            
             dmap = Image.open(os.path.join('images', 'DiscordMap.png'))
             tmp = os.path.join('images', 'temp_map.png')
         
@@ -42,8 +49,8 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
                 for w in range(dmap.size[0]):
                     # Iterate over every heigh pixel in the map
                     for h in range(dmap.size[1]):
-                        # If the average of R and G colour channels are higher than the B colour channel, regard it as land. Also takes away white pixels
-                        if int(sum(mpxs[w, h][:2])/2) > mpxs[w, h][2] and not mpxs[w, h] == (255, 255, 255):
+                        # If the average of R and G colour channels are higher than the B colour channel, regard it as land. Also takes away very white pixels
+                        if int(sum(mpxs[w, h][:2])/2) > mpxs[w, h][2] and not sum(mpxs[w, h])/3 > 230:
                             self.land.append((w, h))
 
                 await m.delete()
@@ -56,7 +63,7 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
             dmap.paste(wumpus, poffset, wumpus)
             dmap.save(tmp, 'PNG')
 
-            embed = discord.Embed(title="Free the Wumpus!", description="The map size is {0}x{1} (width x height). Now quick! Send a pixel location to save Wumpus!".format(dmap.size[0], dmap.size[1]), color=0x42f4ee)
+            embed = discord.Embed(title="Free the Wumpus!", description="The map size is {0}x{1} (width x height) and wumpus is {2}x{3}. Now quick! Send a pixel location to save Wumpus!".format(dmap.size[0], dmap.size[1], wumpus.size[0], wumpus.size[1]), color=0x42f4ee)
             emsg = await ctx.send(embed=embed)
             fmsg = await ctx.send(file=discord.File(open(tmp, 'rb')))
 
@@ -70,14 +77,14 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
             await imsg.delete()
             await fmsg.delete()
             await emsg.delete()
-            asyncio.sleep(10)
+            await asyncio.sleep(20)
             await errmsg.delete()
             return
 
         upx = msg.content.split('x')
         if not len(upx) == 2:
             errmsg = await ctx.send("This doesn't seem to be a valid syntax, please start over again. Use the format **0000x0000**, for example **481x1299**")
-            await asyncio.sleep(10)
+            await asyncio.sleep(20)
             await imsg.delete()
             await fmsg.delete()
             await emsg.delete()
@@ -88,7 +95,7 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
             upx = (int(upx[0]), int(upx[1]))
         except TyperError:
             errmsg = await ctx.send("Doesn't seem like you parsed numbers. Use the format **0000x0000**, for example **481x1299**")
-            await asyncio.sleep(10)
+            await asyncio.sleep(20)
             await imsg.delete()
             await fmsg.delete()
             await emsg.delete()
@@ -98,7 +105,7 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
         uw, uh = upx
         if uw > dmap.size[0] or uh > dmap.size[1]: 
             errmsg = await ctx.send("The pixel you have chose is out of bounds! Select wone within the specified image size.")
-            await asyncio.sleep(10)
+            await asyncio.sleep(20)
             await imsg.delete()
             await fmsg.delete()
             await emsg.delete()
@@ -109,12 +116,12 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
             # User point is within wumpus width
             if uh > toplefth and uh < (toplefth+wumpus.size[1]):
                 # User point is within wumpus height
-                await ctx.send("Congratulations! You saved Wumpus! View the pixel you selected up above.")
+                await ctx.send("Congratulations! You saved Wumpus! This is where you sent the discord team:")
             else:
-                await ctx.send("That was close! Try again! We *must* save Wumpus!")
+                await ctx.send("That was close! Check out underneath! We *must* save Wumpus!!")
 
         else:
-            await ctx.send("Oh no! You didn't get it right... That was unfortunate. Next time we must save Wumpus!")
+            await ctx.send("Oh no! You didn't get it right... That was unfortunate. Next time we must save Wumpus! Here was your attempt:")
 
         target = Image.open(os.path.join('images', 'target.png'))
         poffset = (uw-int(target.size[0]/2), uh-int(target.size[1]/2))
