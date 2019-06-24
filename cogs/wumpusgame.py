@@ -18,40 +18,48 @@ class WumpusGame(commands.Cog):
 *Wumpus is stuck on Discord Island and needs help to go free! You need to tell the Discord staff team where to go to save Wumpus!*
 Send a pixel location *(using the format 0000x0000)* that is located on Wumpus. You need to find Wumpus and then accurately guess a pixel value that is on him!
 *Good luck!~* :tada:''')
+        async with ctx.typing():
+            # Open images
+            wumpus = Image.open(os.path.join('images', 'WumpusLove.png'))
+            wumpus = wumpus.resize((400, 400))
+            dmap = Image.open(os.path.join('images', 'DiscordMap.png'))
         
-        # Open images
-        wumpus = Image.open(os.path.join('images', 'WumpusLove.png'))
-        wumpus = wumpus.resize((400, 400))
-        dmap = Image.open(os.path.join('images', 'DiscordMap.png'))
+            mpxs = dmap.load()
+
+            land = []
         
-        mpxs = dmap.load()
+            # Iterate over every width pixel in the map
+            for w in range(dmap.size[0]):
+                # Iterate over every heigh pixel in the map
+                for h in range(dmap.size[1]):
+                    # If the average of R and G colour channels are higher than the B colour channel, regard it as land
+                    if int(sum(mpxs[w, h][:2])/2) > mpxs[w, h][2] and not mpxs[w, h] == (255, 255, 255):
+                        land.append((w, h))
 
-        land = []
-        
-        # Iterate over every width pixel in the map
-        for w in range(dmap.size[0]):
-            # Iterate over every heigh pixel in the map
-            for h in range(dmap.size[1]):
-                # If the average of R and G colour channels are higher than the B colour channel, regard it as land
-                if int(sum(mpxs[w, h][:2])/2) > mpxs[w, h][2] and not mpxs[w, h] == (255, 255, 255):
-                    land.append((w, h))
+            rland = random.choice(land)
+            topleftw = rland[0]-int(wumpus.size[0]/2)
+            toplefth = rland[1]-int(wumpus.size[1]/2)
+            poffset = (topleftw, toplefth)
 
-        rland = random.choice(land)
-        topleftw = rland[0]-int(wumpus.size[0]/2)
-        toplefth = rland[1]-int(wumpus.size[1]/2)
-        poffset = (topleftw, toplefth)
+            dmap.paste(wumpus, poffset, wumpus)
+            dmap.save(os.path.join('images', 'temp_map.png'), 'PNG')
 
-        final = dmap.paste(wumpus, poffset, wumpus)
-        final.save(os.path.join('images', 'temp_map.png'), 'PNG')
-
-        embed = discord.Embed(title="Free the Wumpus!", description="The map size is {0}x{1} (width x height). Now quick! Send a pixel location to save Wumpus!".format(dmap.size[0], dmap.size[1]), color=0x42f4ee)
-        embed.set_image(os.path.join('images', 'temp_map.png'))
-        emsg = await ctx.send(embed=embed)
+            embed = discord.Embed(title="Free the Wumpus!", description="The map size is {0}x{1} (width x height). Now quick! Send a pixel location to save Wumpus!".format(dmap.size[0], dmap.size[1]), color=0x42f4ee)
+            embed.set_image(os.path.join('images', 'temp_map.png'))
+            emsg = await ctx.send(embed=embed)
 
         def check(msg):
             return msg.author == ctx.author
 
-        msg = await ctx.bot.wait_for('message', check=check, timeout=30)
+        try:
+            msg = await ctx.bot.wait_for('message', check=check, timeout=30)
+        except asyncio.TimeoutError:
+            errmsg = await ctx.send("Took too long. You need to be fast!")
+            await imsg.delete()
+            await emsg.delete()
+            asyncio.sleep(5)
+            await errmsg.delete()
+
         upx = msg.content.split('x')
         if not len(upx) == 2:
             errmsg = await ctx.send("This doesn't seem to be a valid syntax, please start over again. Use the format **0000x0000**, for example **481x1299**")
@@ -94,8 +102,8 @@ Send a pixel location *(using the format 0000x0000)* that is located on Wumpus. 
         target = Image.open(os.path.join('images', 'target.png'))
         poffset = (uw-int(target.size[0]/2), uh-int(target.size[1]/2))
         
-        post_game = dmap.paste(target, poffset, target)
-        post_game.save(os.path.join('images', 'temp_map.png'), 'PNG')
+        dmap.paste(target, poffset, target)
+        dmap.save(os.path.join('images', 'temp_map.png'), 'PNG')
 
         embed.set_image(os.path.join('images', 'temp_map.png'))
         await emsg.edit(embed=embed)
