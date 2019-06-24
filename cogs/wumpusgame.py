@@ -10,71 +10,87 @@ from PIL import Image
 class WumpusGame(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.land = []
 
-    @commands.guild_only()
+
     @commands.command()
     async def play(self, ctx):
-        imsg = await ctx.send('''**Welcome to the Wumpus Game!**
-*Wumpus is stuck on Discord Island and needs help to go free! You need to tell the Discord staff team where to go to save Wumpus!*
-Send a pixel location *(using the format 0000x0000)* that is located on Wumpus. You need to find Wumpus and then accurately guess a pixel value that is on him!
-*Good luck!~* :tada:''')
+        embed = discord.Embed(
+            title="**Welcome to the Wumpus Game!**",
+            description='''*Wumpus is stuck on Discord Island and needs help to go free! You need to tell the Discord staff team where to go to save Wumpus!*
+
+Tell me where to send the Discord staff by sending x and y coordinates (using the format 0000x0000 and starting from the top left) to where it looks like Wumpus is!
+*Good luck!* ***Let's get Wumpus back!*** :tada:''', 
+            color=0x50ffff
+        )
+        
+        imsg = await ctx.send(embed=embed)
+
         async with ctx.typing():
             # Open images
             wumpus = Image.open(os.path.join('images', 'WumpusLove.png'))
-            wumpus = wumpus.resize((400, 400))
+            wumpus = wumpus.resize((800, 800))
             dmap = Image.open(os.path.join('images', 'DiscordMap.png'))
+            tmp = os.path.join('images', 'temp_map.png')
         
             mpxs = dmap.load()
 
-            land = []
-        
-            # Iterate over every width pixel in the map
-            for w in range(dmap.size[0]):
-                # Iterate over every heigh pixel in the map
-                for h in range(dmap.size[1]):
-                    # If the average of R and G colour channels are higher than the B colour channel, regard it as land
-                    if int(sum(mpxs[w, h][:2])/2) > mpxs[w, h][2] and not mpxs[w, h] == (255, 255, 255):
-                        land.append((w, h))
+            if not self.land:
+                self.land = []
+                m = await ctx.send("Hol' up. I just need to load the map.")
+                # Iterate over every width pixel in the map
+                for w in range(dmap.size[0]):
+                    # Iterate over every heigh pixel in the map
+                    for h in range(dmap.size[1]):
+                        # If the average of R and G colour channels are higher than the B colour channel, regard it as land. Also takes away white pixels
+                        if int(sum(mpxs[w, h][:2])/2) > mpxs[w, h][2] and not mpxs[w, h] == (255, 255, 255):
+                            self.land.append((w, h))
 
-            rland = random.choice(land)
+                await m.delete()
+
+            rland = random.choice(self.land)
             topleftw = rland[0]-int(wumpus.size[0]/2)
             toplefth = rland[1]-int(wumpus.size[1]/2)
             poffset = (topleftw, toplefth)
 
             dmap.paste(wumpus, poffset, wumpus)
-            dmap.save(os.path.join('images', 'temp_map.png'), 'PNG')
+            dmap.save(tmp, 'PNG')
 
             embed = discord.Embed(title="Free the Wumpus!", description="The map size is {0}x{1} (width x height). Now quick! Send a pixel location to save Wumpus!".format(dmap.size[0], dmap.size[1]), color=0x42f4ee)
-            embed.set_image(os.path.join('images', 'temp_map.png'))
             emsg = await ctx.send(embed=embed)
+            fmsg = await ctx.send(file=discord.File(open(tmp, 'rb')))
 
         def check(msg):
             return msg.author == ctx.author
 
         try:
-            msg = await ctx.bot.wait_for('message', check=check, timeout=30)
+            msg = await ctx.bot.wait_for('message', check=check, timeout=60)
         except asyncio.TimeoutError:
             errmsg = await ctx.send("Took too long. You need to be fast!")
             await imsg.delete()
+            await fmsg.delete()
             await emsg.delete()
-            asyncio.sleep(5)
+            asyncio.sleep(10)
             await errmsg.delete()
+            return
 
         upx = msg.content.split('x')
         if not len(upx) == 2:
             errmsg = await ctx.send("This doesn't seem to be a valid syntax, please start over again. Use the format **0000x0000**, for example **481x1299**")
             await asyncio.sleep(10)
             await imsg.delete()
+            await fmsg.delete()
             await emsg.delete()
             await errmsg.delete()
             return
 
         try:
-            upx = (upx[0], upx[1])
+            upx = (int(upx[0]), int(upx[1]))
         except TyperError:
             errmsg = await ctx.send("Doesn't seem like you parsed numbers. Use the format **0000x0000**, for example **481x1299**")
             await asyncio.sleep(10)
             await imsg.delete()
+            await fmsg.delete()
             await emsg.delete()
             await errmsg.delete()
             return
@@ -84,6 +100,7 @@ Send a pixel location *(using the format 0000x0000)* that is located on Wumpus. 
             errmsg = await ctx.send("The pixel you have chose is out of bounds! Select wone within the specified image size.")
             await asyncio.sleep(10)
             await imsg.delete()
+            await fmsg.delete()
             await emsg.delete()
             await errmsg.delete()
             return
@@ -103,10 +120,9 @@ Send a pixel location *(using the format 0000x0000)* that is located on Wumpus. 
         poffset = (uw-int(target.size[0]/2), uh-int(target.size[1]/2))
         
         dmap.paste(target, poffset, target)
-        dmap.save(os.path.join('images', 'temp_map.png'), 'PNG')
+        dmap.save(tmp, 'PNG')
 
-        embed.set_image(os.path.join('images', 'temp_map.png'))
-        await emsg.edit(embed=embed)
+        await ctx.send(file=discord.File(open(tmp, 'rb')))
 
 
 def setup(bot):
