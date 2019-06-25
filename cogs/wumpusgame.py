@@ -56,7 +56,7 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
 
             rland = random.choice(self.land)
             topleftw = rland[0]-int(wumpus.size[0]/2)
-            toplefth = rland[1]-int(wumpus.size[1]/2)
+            toplefth = rland[1]-wumpus.size[1]  # We want Wumpus to sit on the land
             poffset = (topleftw, toplefth)
 
             tmp = os.path.join('images', 'temp_map.png')
@@ -71,7 +71,7 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
             msg = await ctx.bot.wait_for('message', check=lambda msg: msg.author == ctx.author, timeout=45)
         except asyncio.TimeoutError:
             errmsg = await ctx.send("Took too long. You need to be fast!")
-            [await m.delete() async for m in msgs]
+            [await m.delete() for m in msgs]
             await asyncio.sleep(20)
             await errmsg.delete()
             return
@@ -80,7 +80,7 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
         if not len(upx) == 2:
             errmsg = await ctx.send("This doesn't seem to be a valid syntax, please start over again. Use the format **0000x0000**, for example **481x1299**")
             await asyncio.sleep(20)
-            [await m.delete() async for m in msgs]
+            [await m.delete() for m in msgs]
             await errmsg.delete()
             return
 
@@ -89,7 +89,7 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
         except TyperError:
             errmsg = await ctx.send("Doesn't seem like you parsed numbers. Use the format **0000x0000**, for example **481x1299**")
             await asyncio.sleep(20)
-            [await m.delete() async for m in msgs]
+            [await m.delete() for m in msgs]
             await errmsg.delete()
             return
 
@@ -97,7 +97,7 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
         if uw > dmap.size[0] or uh > dmap.size[1]: 
             errmsg = await ctx.send("The pixel you have chosen is out of bounds! Select wone within the specified image size.")
             await asyncio.sleep(20)
-            [await m.delete() async for m in msgs]
+            [await m.delete() for m in msgs]
             await errmsg.delete()
             return
 
