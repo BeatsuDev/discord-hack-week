@@ -38,19 +38,15 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
                 wumpus = wumpus.resize((750, 750))
             elif difficulty.lower() == "hard":
                 wumpus = wumpus.resize((500, 500))
-
-            
             dmap = Image.open(os.path.join('images', 'DiscordMap.png'))
-            tmp = os.path.join('images', 'temp_map.png')
-        
-            mpxs = dmap.load()
 
             if not self.land:
                 self.land = []
                 m = await ctx.send("Hol' up. I just need to load the map. *(This may take a while)*")
+                mpxs = dmap.load()
                 # Iterate over every width pixel in the map
                 for w in range(dmap.size[0]):
-                    # Iterate over every heigh pixel in the map
+                    # Iterate over every height pixel in the map
                     for h in range(dmap.size[1]):
                         # If the average of R and G colour channels are higher than the B colour channel, regard it as land. Also takes away very white pixels
                         if int(sum(mpxs[w, h][:2])/2) > mpxs[w, h][2] and not sum(mpxs[w, h])/3 > 230:
@@ -63,6 +59,7 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
             toplefth = rland[1]-int(wumpus.size[1]/2)
             poffset = (topleftw, toplefth)
 
+            tmp = os.path.join('images', 'temp_map.png')
             dmap.paste(wumpus, poffset, wumpus)
             dmap.save(tmp, 'PNG')
 
