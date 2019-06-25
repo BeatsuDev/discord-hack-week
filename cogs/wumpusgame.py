@@ -44,7 +44,7 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
 
             if not self.land:
                 self.land = []
-                m = await ctx.send("Hol' up. I just need to load the map.")
+                m = await ctx.send("Hol' up. I just need to load the map. *(This may take a while)*")
                 # Iterate over every width pixel in the map
                 for w in range(dmap.size[0]):
                     # Iterate over every heigh pixel in the map
@@ -63,15 +63,12 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
             dmap.paste(wumpus, poffset, wumpus)
             dmap.save(tmp, 'PNG')
 
-            embed = discord.Embed(title="Free the Wumpus!", description="The map size is {0}x{1} (width x height) and wumpus is {2}x{3}. Now quick! Send a pixel location to save Wumpus!".format(dmap.size[0], dmap.size[1], wumpus.size[0], wumpus.size[1]), color=0x42f4ee)
+            embed = discord.Embed(title="Free the Wumpus!", description="The map size is {0}x{1} (width x height) and Wumpus' size is {2}x{3}. Now quick! Send a pixel location to save Wumpus!".format(dmap.size[0], dmap.size[1], wumpus.size[0], wumpus.size[1]), color=0x42f4ee)
             emsg = await ctx.send(embed=embed)
             fmsg = await ctx.send(file=discord.File(open(tmp, 'rb')))
 
-        def check(msg):
-            return msg.author == ctx.author
-
         try:
-            msg = await ctx.bot.wait_for('message', check=check, timeout=60)
+            msg = await ctx.bot.wait_for('message', check=lambda msg: msg.author == ctx.author, timeout=45)
         except asyncio.TimeoutError:
             errmsg = await ctx.send("Took too long. You need to be fast!")
             await imsg.delete()
