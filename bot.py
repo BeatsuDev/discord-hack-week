@@ -1,6 +1,5 @@
 import discord
 import asyncio
-from discord.ext.commands import Bot
 from discord.ext import commands
 
 # keys.py is in the gitignore file so it does not get uploaded to the github repository
@@ -15,11 +14,11 @@ class Bot(commands.Bot):
         self.add_command(self.ping)
 
     @commands.command()
-    async def ping(self, ctx):
+    async def ping(ctx):
         await ctx.send(":ping_pong: Pong!")
 
     @commands.command()
-    async def help(self, ctx):
+    async def help(ctx):
         message = """Hello! My name is Frizzler! I am a bot created for Discord's Hack Week! 
         
         Prefix: **f!**
