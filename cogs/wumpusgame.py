@@ -15,16 +15,19 @@ class WumpusGame(commands.Cog):
 
     @commands.command()
     async def play(self, ctx, difficulty="normal"):
+        '''Play a game where you save Wumpus from Discord island'''
+        msgs = []
+
         embed = discord.Embed(
             title="**Welcome to the Wumpus Game!**",
-            description='''*Wumpus is stuck on Discord Island and needs help to go free! You need to tell the Discord staff team where to go to save Wumpus!*
+            description='''*Wumpus is stuck on Discord Island and needs help to get free! You need to tell the Discord staff team where to go to save Wumpus!*
 
 Tell me where to send the Discord staff by sending x and y coordinates (using the format 0000x0000 and starting from the top left) to where it looks like Wumpus is!
 *Good luck!* ***Let's get Wumpus back!*** :tada:''', 
             color=0x50ffff
         )
         
-        imsg = await ctx.send(embed=embed)
+        msgs.append(await ctx.send(embed=embed))
 
         async with ctx.typing():
             # Open images
@@ -64,16 +67,14 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
             dmap.save(tmp, 'PNG')
 
             embed = discord.Embed(title="Free the Wumpus!", description="The map size is {0}x{1} (width x height) and Wumpus' size is {2}x{3}. Now quick! Send a pixel location to save Wumpus!".format(dmap.size[0], dmap.size[1], wumpus.size[0], wumpus.size[1]), color=0x42f4ee)
-            emsg = await ctx.send(embed=embed)
-            fmsg = await ctx.send(file=discord.File(open(tmp, 'rb')))
+            msgs.append(await ctx.send(embed=embed))
+            msgs.append(await ctx.send(file=discord.File(open(tmp, 'rb'))))
 
         try:
             msg = await ctx.bot.wait_for('message', check=lambda msg: msg.author == ctx.author, timeout=45)
         except asyncio.TimeoutError:
             errmsg = await ctx.send("Took too long. You need to be fast!")
-            await imsg.delete()
-            await fmsg.delete()
-            await emsg.delete()
+            [await m.delete() async for m in msgs]
             await asyncio.sleep(20)
             await errmsg.delete()
             return
@@ -82,9 +83,7 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
         if not len(upx) == 2:
             errmsg = await ctx.send("This doesn't seem to be a valid syntax, please start over again. Use the format **0000x0000**, for example **481x1299**")
             await asyncio.sleep(20)
-            await imsg.delete()
-            await fmsg.delete()
-            await emsg.delete()
+            [await m.delete() async for m in msgs]
             await errmsg.delete()
             return
 
@@ -93,19 +92,15 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
         except TyperError:
             errmsg = await ctx.send("Doesn't seem like you parsed numbers. Use the format **0000x0000**, for example **481x1299**")
             await asyncio.sleep(20)
-            await imsg.delete()
-            await fmsg.delete()
-            await emsg.delete()
+            [await m.delete() async for m in msgs]
             await errmsg.delete()
             return
 
         uw, uh = upx
         if uw > dmap.size[0] or uh > dmap.size[1]: 
-            errmsg = await ctx.send("The pixel you have chose is out of bounds! Select wone within the specified image size.")
+            errmsg = await ctx.send("The pixel you have chosen is out of bounds! Select wone within the specified image size.")
             await asyncio.sleep(20)
-            await imsg.delete()
-            await fmsg.delete()
-            await emsg.delete()
+            [await m.delete() async for m in msgs]
             await errmsg.delete()
             return
 
