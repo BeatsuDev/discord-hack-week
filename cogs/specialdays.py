@@ -24,6 +24,12 @@ class SpecialDay(commands.Cog):
         self.loop = asyncio.get_event_loop()
         self.jfile = os.path.join(os.getcwd(), 'data', 'events.json')
 
+        if not os.path.isfile(self.jfile):
+            data = {}
+            data["guilds"] = {}
+            async with aiofiles.open(self.jfile, "w") as f:
+                await f.write(json.loads(data))
+
         '''
         JSON structure:
         "guilds": {
