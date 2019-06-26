@@ -91,7 +91,7 @@ class SpecialDay(commands.Cog):
         today = datetime.datetime.now().strftime("%m/%d/%Y")
 
         # Check if the day is valid
-        if len(today) != 10 or list(map(lambda part: not part.isdigit(), day.split("/"))):
+        if len(today) != 10 or False in list(map(lambda part: part.isdigit(), day.split("/"))):
             embed = discord.Embed(title=f'Please use the format MM/DD/YYYY for the date. Example: {today}', color=0xff0000)
             await ctx.send(embed=embed)
             return
