@@ -14,7 +14,7 @@ class SpecialDay(commands.Cog):
         '''
         A cog to set special days and get notified when it's a special day. 
         Contains the following commands:
-            - `specialday`, aliases=`sd`
+            - `specialday`, aliases= `sd`
             - `addevent`, aliases= `aevent`, `eventadd`, `ae`
             - `removeevent`, aliases= `revent`, `eventremove`, `re`
             - `viewevents`, aliases= `events`, `days`
@@ -24,7 +24,11 @@ class SpecialDay(commands.Cog):
         self.loop = asyncio.get_event_loop()
         self.jfile = os.path.join(os.getcwd(), 'data', 'events.json')
 
-        if not os.path.isfile(self.jfile):
+        # Create data directory if it does not exist
+        if not os.path.isdir(self.jfile.split(os.path.sep)[-1:]): os.mkdir(self.jfile.split(os.path.sep)[-1:])
+
+        # Create json file if it does not exist or is empty
+        if not os.path.isfile(self.jfile) and os.path.getsize(self.jfile) > 0:
             data = {}
             data["guilds"] = {}
             async with aiofiles.open(self.jfile, "w") as f:
