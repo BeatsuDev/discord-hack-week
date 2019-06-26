@@ -27,26 +27,49 @@ class Party(commands.Cog):
         '''
         Set a channel to party mode!
         '''
+        # Check if there's a party in the channel already
+        if ctx.channel.id in self.parties: 
+            embed = discord.Embed(description="Party in <@{}> already!".format(ctx.channel.id))
+            embed.set_author(icon_url=ctx.author.avatar_url, text="You're missing out {}! There's already a party in here!".format())
+            e = await ctx.send(embed=embed)
+            await asyncio.sleep(10)
+            await e.delete()
+            return
+
+        # Setting variables for the embed
         title = "Welcome to the party channel! :tada:"
-        colour = ctx.author.colour if hasattr(ctx.author, 'colour') else discord.Colour.blurple()
+        colour = ctx.author.colour if hasattr(ctx.author.avatar_url, "colour") else discord.Colour.blurple()
         if celebration:
             message = "This channel is now in party mode, authorized by {0.author.display_name}. They're celebrating {1}!\n\nEnjoy! :tada:".format(ctx, celebration) 
         else:
             message = "This channel is now in party mode, authorized by {0.author.display_name}.\n\nEnjoy! :tada:".format(ctx)
 
+        # Create the embed
         embed = discord.Embed(title=title, description=message)
-        embed.set_author(icon_url=ctx.message.author.avatar_url, name=ctx.message.author.display_name+ " just activated PARTY MODE!")
+        embed.set_author(icon_url=ctx.author.avatar_url, name=ctx.author.display_name+ " just activated PARTY MODE!")
 
+        # Send the embed and message that will be edited as an animation
         emsg = await ctx.send(embed=embed)
         pmsg = await ctx.send("It's time for a party!")
 
         await asyncio.sleep(5)
+
+        # Set the end time by adding x minutes times 60 (for seconds) to the current time.
         end = time.time() + 5*60
         while time.time() < end:
             await self.animate(pmsg)
 
+        # Remove the channel ID from self.parties.
+        async for i in range(len(self.parties)):
+            if i == ctx.channel.id:
+                del self.parties[i]
+                return
+
 
     async def animate(self, message):
+        '''
+        Animate the message by going through 
+        '''
         async for f in asyncio.gather(map(lambda x: x, self.frames)):
             await asyncio.sleep(1)
             await message.edit(content=f)
