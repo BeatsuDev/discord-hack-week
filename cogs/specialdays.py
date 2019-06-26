@@ -25,17 +25,12 @@ class SpecialDay(commands.Cog):
         self.loop = asyncio.get_event_loop()
         self.jfile = os.path.join(os.getcwd(), 'data', 'events.json')
 
-        # Create data directory if it does not exist
-        direc = self.jfile = os.path.join(os.getcwd(), 'data')
-        if not os.path.isdir(direc): os.mkdir(direc)
-
-        # Create json file if it does not exist or is empty
-        if not os.path.isfile(self.jfile) and os.path.getsize(self.jfile) > 0:
+        # Fill json file if it is empty
+        if not os.path.getsize(self.jfile) > 0:
             data = {}
             data["guilds"] = {}
             with open(self.jfile, "w") as f:
                 json.dump(data, f)
-                f.close()
 
         '''
         JSON structure:
@@ -122,22 +117,21 @@ class SpecialDay(commands.Cog):
         
         # Load data from json file
         async with aiofiles.open(self.jfile, mode='r') as f:
-            data = json.loads(await f.read())
-            await f.close()
+            data = await f.read()
+            data = json.loads(data)
 
         # Check if events are already registered in this guild
-        if ctx.guild.id in data["guilds"]:
-            data["guilds"]["events"][name.lower()] = event_data[name.lower()]
+        try:
+            data["guilds"][str(ctx.guild.id)]["events"][name.lower()] = event_data[name.lower()]
 
-        else:
+        except KeyError:
             data["guilds"][ctx.guild.id] = {}
             data["guilds"][ctx.guild.id]["events"] = {}
-            data["guilds"]["events"][name.lower()] = event_data[name.lower()]
+            data["guilds"][ctx.guild.id]["events"][name.lower()] = event_data[name.lower()]
 
         # Dump data into file
         async with aiofiles.open(self.jfile, mode="w") as f:
             await f.write(json.dumps(data))
-            await f.close()
     
     @commands.guild_only()
     @commands.command(aliases=['revent', 'eventremove', 're'])
@@ -148,8 +142,8 @@ class SpecialDay(commands.Cog):
         '''
         # Load data
         async with aiofiles.open(self.jfile, mode='r') as f:
-            data = json.loads(await f.read(f))
-            await f.close()
+            data = await f.read()
+            data = json.loads(data)
 
         # Set the embed straight away as it will be used in the following two if statements
         embed = discord.Embed(title='There are no speical days added yet.', color=0xff0000)
@@ -192,28 +186,28 @@ class SpecialDay(commands.Cog):
         '''
         # Load data
         async with aiofiles.open(self.jfile, mode='r') as f:
-            data = json.loads(await f.read(f))
-            await f.close()
+            data = await f.read()
+            data = json.loads(data)
 
         # Set the embed straight away as it will be used in the following two if statements
         embed = discord.Embed(title='There are no speical days added yet.', color=0xff0000)
 
         # Check if the guild is registered
-        if not ctx.guild.id in data["guilds"]:
+        if not str(ctx.guild.id) in data["guilds"]:
             await ctx.send(embed=embed)
             return
 
         # Check if there are no registered events
-        if not data["guilds"][ctx.guild.id]["events"]:
+        if not data["guilds"][str(ctx.guild.id)]["events"]:
             await ctx.send(embed=embed)
             return
 
         # Creating embed to show all registered events 
         embed = discord.Embed(title='Special Days', color=discord.Colour.blurple())
-        events = data["guilds"][ctx.guild.id]["events"]
+        events = data["guilds"][str(ctx.guild.id)]["events"]
         for event in events:
-            name = event["name"]
-            date = event["date"]
+            name = events[event]["name"]
+            date = events[event]["date"]
             embed.add_field(name=name, value=date, inline=True)
         await ctx.send(embed=embed)
     
@@ -230,27 +224,33 @@ class SpecialDay(commands.Cog):
             return
 
         # We want to be able to work with the channel id which will lie between <# and >
-        if not channelset or not (channelset.beginswith("<#") and channelset.endswith(">")):
-            embed = discord.Embed(title="Please enter the channel you want events to be posted in by tagging it with the `#` symbol, like this: <#{0.channel.id}>".format(ctx))
+        if not channelset or not (channelset.startswith("<#") and channelset.endswith(">")):
+            embed = discord.Embed(title="Error", value="Please enter the channel you want events to be posted in by tagging it with the `#` symbol, like this: <#{0.channel.id}>".format(ctx), colour=0xff0000)
             await ctx.send(embed=embed)
             return
 
         # Load data
         async with aiofiles.open(self.jfile, mode='r') as f:
-            data = json.loads(await f.read(f))
-            await f.close()
+            data = await f.read()
+            data = json.loads(data)
 
         # Change data
-        data["guilds"][ctx.guild.id]["channel"] = int(channelset[2:-1])
+        try:
+            data["guilds"][str(ctx.guild.id)]["channel"] = int(channelset[2:-1])
+
+        except KeyError:
+            data["guilds"][ctx.guild.id] = {}
+            data["guilds"][ctx.guild.id]["events"] = {}
+            data["guilds"][ctx.guild.id]["channel"] = int(channelset[2:-1])
+
 
         # Save data
         async with aiofiles.open(self.jfile, "w") as f:
             await f.write(json.dumps(data))
-            await f.close()
 
         # Create embed for success message
-        embed = discord.Embed(description=f'<#{channelID}> will now be used for all special day notifications.', colour=0x00ff00)
-        embed.set_author(name=f'{author.display_name} has successfully changed the special day notification channel.', icon_url=author.avatar_url)
+        embed = discord.Embed(description=f'<#{channelset[2:-1]}> will now be used for all special day notifications.', colour=0x00ff00)
+        embed.set_author(name=f'{ctx.author.display_name} has successfully changed the special day notification channel.', icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
 
 
@@ -286,7 +286,7 @@ class SpecialDay(commands.Cog):
             embed = discord.Embed(title='You do not have permission to use this command.', colour=0xff0000)
             await ctx.send(embed=embed)
         else:
-            print(error.traceback)
+            print(error)
 
 
 def setup(bot):
