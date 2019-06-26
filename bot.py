@@ -1,4 +1,6 @@
 import discord
+import glob
+import os
 import asyncio
 from discord.ext import commands
 
@@ -23,14 +25,19 @@ class Bot(commands.Bot):
         
         Prefix: **f!**
 
-        Commands:
-        `ping`
-        Pings the bot"""
+        Availale commands:
+        """
 
         embed = discord.Embed(description=message)
         embed.set_author(icon_url=ctx.message.author.avatar_url, name=ctx.message.author.display_name + " has requested help!")
         embed.colour = ctx.message.author.colour if hasattr(ctx.message.author, "colour") else discord.Colour.default()
+        for cmd in ctx.bot.commands:
+            embed.description += f"*{cmd.name}*\n"
         await ctx.send(embed=embed)
+
+    async def load_all_cogs(self):
+        cogs = [c.split(os.path.sep)[-1:][0][:-3] for c in glob.glob(os.path.join(os.getcwd(), 'cogs', '*.py'))]
+        for cog in cogs: self.load_extension("cogs.{}".format(cog))
 
     async def on_ready(self):
         print('Logged in as ' + self.user.name + ' (ID:' + str(self.user.id) + ') | Connected to ' + str(len(self.guilds)) + ' servers | Connected to ' + str(len(set(self.get_all_members()))) + ' users')
@@ -42,9 +49,10 @@ class Bot(commands.Bot):
         # examplecog.py is loaded as 'examplecog'
         # append cogs to the list to load your code
         # ex: cogs = ['examplecog', 'frankscog', 'beatsuscog']
-        cogs = ['examplecog', 'wumpusgame', 'party', 'specialdays']
-        for cog in cogs:
-            self.load_extension("cogs.{}".format(cog))
+        await self.load_all_cogs()
+        #cogs = ['examplecog', 'wumpusgame', 'party', 'specialdays']
+        #for cog in cogs:
+        #    self.load_extension("cogs.{}".format(cog))
 
 # don't touch this
 async def run():
