@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import time
+import asyncio
 
 import aiofiles
 import discord
@@ -25,14 +26,15 @@ class SpecialDay(commands.Cog):
         self.jfile = os.path.join(os.getcwd(), 'data', 'events.json')
 
         # Create data directory if it does not exist
-        if not os.path.isdir(self.jfile.split(os.path.sep)[-1:]): os.mkdir(self.jfile.split(os.path.sep)[-1:])
+        direc = self.jfile = os.path.join(os.getcwd(), 'data')
+        if not os.path.isdir(direc): os.mkdir(direc)
 
         # Create json file if it does not exist or is empty
         if not os.path.isfile(self.jfile) and os.path.getsize(self.jfile) > 0:
             data = {}
             data["guilds"] = {}
-            async with aiofiles.open(self.jfile, "w") as f:
-                await f.write(json.loads(data))
+            with open(self.jfile, "w") as f:
+                json.dump(data, f)
 
         '''
         JSON structure:
@@ -68,9 +70,9 @@ class SpecialDay(commands.Cog):
         )
         # Add a field for every command
         embed.add_field(name='f!setchannel <#channel>', value='Use this command to set what channel special days are notified in.')
-        embed.add_field(name='f!add <day> <name>', value='Add a special day, please use MM/DD/YYYY format.', inline=False)
-        embed.add_field(name='f!remove <day>', value='Remove a special day, please use MM/DD/YYYY format.', inline=False)
-        embed.add_field(name='f!view', value='View all special days.', inline=False)
+        embed.add_field(name='f!addevent <day> <name>', value='Add a special day, please use MM/DD/YYYY format.', inline=False)
+        embed.add_field(name='f!removeevent <day>', value='Remove a special day, please use MM/DD/YYYY format.', inline=False)
+        embed.add_field(name='f!viewevent', value='View all special days.', inline=False)
         await ctx.send(embed=embed)
 
         # Warn the user if they don't have admin privileges
@@ -101,14 +103,14 @@ class SpecialDay(commands.Cog):
             return
 
         # Set the event data (which is to be put in the events["guilds"]["events"] dict)
-        event_data = [
+        event_data = {
             name.lower(): {
                 "set": time.time(),
                 "set_by": ctx.author.id,
                 "name": name,
                 "date": day
             }
-        ]
+        }
 
         # Create embed for successfull addition of event
         embed = discord.Embed(color=0x00ff00)
@@ -118,20 +120,20 @@ class SpecialDay(commands.Cog):
         await ctx.send(embed=embed)
         
         # Load data from json file
-        async with aiofiles.open(self.jfile, 'r') as r:
+        async with aiofiles.open(self.jfile, mode='r') as r:
             data = json.load(r)
 
         # Check if events are already registered in this guild
         if ctx.guild.id in data["guilds"]:
-            data["guilds"]["events"].append(event_data)
+            data["guilds"]["events"][name.lower()] = event_data[name.lower()]
 
         else:
             data["guilds"][ctx.guild.id] = {}
-            data["guilds"][ctx.guild.id]["events"] = []
-            data["guilds"]["events"].append(event_data)
+            data["guilds"][ctx.guild.id]["events"] = {}
+            data["guilds"]["events"][name.lower()] = event_data[name.lower()]
 
         # Dump data into file
-        async with aiofiles.open(self.jfile, "w") as f:
+        async with aiofiles.open(self.jfile, mode="w") as f:
             await f.write(json.dumps(data))
     
     @commands.guild_only()
@@ -142,7 +144,7 @@ class SpecialDay(commands.Cog):
         Remove a special day.
         '''
         # Load data
-        async with aiofiles.open(self.jfile, 'r') as f:
+        async with aiofiles.open(self.jfile, mode='r') as f:
             data = json.loads(await f.read(f))
 
         # Set the embed straight away as it will be used in the following two if statements
@@ -160,9 +162,9 @@ class SpecialDay(commands.Cog):
         
         # Check if an event with the given name exists
         events = data["guilds"][ctx.guild.id]["events"]
-        if name.lower() in list(next(e) for e in events):
+        if name.lower() in events:
             # Delete the event
-            [del event async for event in asyncio.gather(map(lambda x: x, events)) if event["name"] == name.lower()]
+            del events[name.lower()]
 
             # Create the embed for a successfull delete
             embed = discord.Embed(colour=0x00ff00)
@@ -185,7 +187,7 @@ class SpecialDay(commands.Cog):
         View all events that is set in the guild
         '''
         # Load data
-        async with aiofiles.open(self.jfile, 'r') as f:
+        async with aiofiles.open(self.jfile, mode='r') as f:
             data = json.loads(await f.read(f))
 
         # Set the embed straight away as it will be used in the following two if statements
@@ -229,7 +231,7 @@ class SpecialDay(commands.Cog):
             return
 
         # Load data
-        async with aiofiles.open(self.jfile, 'r') as f:
+        async with aiofiles.open(self.jfile, mode='r') as f:
             data = json.loads(await f.read(f))
 
         # Change data
@@ -246,7 +248,7 @@ class SpecialDay(commands.Cog):
 
 
     # Error handling
-    @add.error
+    @addevent.error
     async def add_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
             embed = discord.Embed(title='Please give all required arguments.', colour=0xff0000)
@@ -255,7 +257,7 @@ class SpecialDay(commands.Cog):
             embed = discord.Embed(title='You do not have permission to use this command.', colour=0xff0000)
             await ctx.send(embed=embed)
 
-    @remove.error
+    @removeevent.error
     async def remove_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
             embed = discord.Embed(title='Please give all required arguments.', colour=0xff0000)
