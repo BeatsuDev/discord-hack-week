@@ -42,7 +42,7 @@ class Bot(commands.Bot):
         # examplecog.py is loaded as 'examplecog'
         # append cogs to the list to load your code
         # ex: cogs = ['examplecog', 'frankscog', 'beatsuscog']
-        cogs = ['examplecog', 'wumpusgame', 'party']
+        cogs = ['examplecog', 'wumpusgame', 'party', 'specialdays']
         for cog in cogs:
             self.load_extension("cogs.{}".format(cog))
 
