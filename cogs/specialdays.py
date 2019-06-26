@@ -1,6 +1,9 @@
 import datetime
 import json
 import os
+import time
+
+import aiofiles
 import discord
 from discord.ext import commands
 
@@ -8,214 +11,256 @@ from discord.ext import commands
 class SpecialDay(commands.Cog):
 
     def __init__(self, bot):
+        '''
+        A cog to set special days and get notified when it's a special day. 
+        Contains the following commands:
+            - `specialday`, aliases=`sd`
+            - `addevent`, aliases= `aevent`, `eventadd`, `ae`
+            - `removeevent`, aliases= `revent`, `eventremove`, `re`
+            - `viewevents`, aliases= `events`, `days`
+            - `setchannel`, aliases= `channelset`
+        '''
         self.bot = bot
+        self.loop = asyncio.get_event_loop()
+        self.jfile = os.path.join(os.getcwd(), 'data', 'events.json')
 
-    @commands.guild_only()
-    @commands.command()
-    async def specialday(self, ctx):
-        author = ctx.message.author
-        channel = ctx.message.channel
-        now = datetime.datetime.now()
-        now = now.strftime("%m/%d/%Y")
-        if author.permissions_in(channel=channel).administrator is True:
-            day_embed = discord.Embed(
-                title='Available Commands',
-                description='Say a command followed by the parameters.',
-                color=0x42f4ee
-            )
-            day_embed.add_field(name='f!setchannel <#channel>', value='Use this command to set what channel special days are notified in.')
-            day_embed.add_field(name='f!add <day> <name>', value='Add a special day, please use MM/DD/YYYY format.', inline=False)
-            day_embed.add_field(name='f!remove <day>', value='Remove a special day, please use MM/DD/YYYY format.', inline=False)
-            day_embed.add_field(name='f!view', value='View all special days.', inline=False)
-            await ctx.send(embed=day_embed)
-        else:
-            embed = discord.Embed(title='You do not have permission to use this command.', color=0x42f4ee)
-            await ctx.send(embed=embed)
-
-    @commands.guild_only()
-    @commands.command()
-    @commands.has_permissions(administrator=True)
-    async def add(self, ctx, day, *, name: str = None):
-        author = ctx.message.author
-        guild = ctx.guild
-        now = datetime.datetime.now()
-        now = now.strftime("%m/%d/%Y")
-        jfile = os.path.join(os.getcwd(), 'data', 'specialdays.json')
-        if len(day) != 10:
-            embed = discord.Embed(
-                title=f'Please use MM/DD/YYYY format for date. Example: {now}',
-                color=0x42f4ee
-            )
-            await ctx.send(embed=embed)
-            return
-        if name is None:
-            embed = discord.Embed(
-                title='Please give a name for the day.',
-                color=0x42f4ee
-            )
-            await ctx.send(embed=embed)
-            return
-        data = {}
-        data['guilds'] = []
-        data['guilds'].append(
-            {
-                str(guild): 
-                {
-                    'date': day, 
-                    'title': name
+        '''
+        JSON structure:
+        "guilds": {
+            guildID: {
+                "channel": channel,
+                "events": {
+                    event_name: {
+                        "title": name,
+                        "date": date
+                    },
+                    event_name2: {
+                        "title": name,
+                        "date": date
+                    }
                 }
-            }
-        )
+            },
+        }
+        '''
+
+
+    @commands.guild_only()
+    @commands.command(aliases=['sd'])
+    async def specialday(self, ctx):
+        '''
+        Help command for the special days module
+        ''' 
+        # Create available commands embed
         embed = discord.Embed(
-            color=0x42f4ee
+            title='Available Commands',
+            description='Say a command followed by the parameters.',
+            color=discord.Colour.blurple()
         )
-        embed.set_author(name=f'{author.display_name} has added a special day.', icon_url=author.avatar_url)
-        embed.add_field(name='Title', value=name, inline=True)
-        embed.add_field(name='Date', value=day, inline=True)
-        num = 0
-        with open(jfile, 'r') as r:
-            data_load = json.load(r)
-            for server in data['guilds']:
-                if str(guild) in server:
-                    num += 1
-        if num == 0:
-            with open(jfile, 'w') as f:
-                json.dump(data, f, indent=4)
-            await ctx.send(embed=embed)
-        else:
-            tdata = json.load(open(jfile, 'r'))
-            for g in data['guilds']:
-                tdata['guilds'].append(g)
-            json.dump(tdata, open(jfile, 'w'), indent=4)
-            await ctx.send(embed=embed)
-    
-    @commands.guild_only()
-    @commands.command()
-    @commands.has_permissions(administrator=True)
-    async def remove(self, ctx, date):
-        author = ctx.message.author
-        channel = ctx.message.channel
-        guild = self.bot.get_guild(ctx.guild.id)
-        now = datetime.datetime.now()
-        now = now.strftime("%m/%d/%Y")
-        jfile = os.path.join(os.getcwd(), 'data', 'specialdays.json')
-        if len(date) != 10:
-            embed = discord.Embed(
-                title=f'Please use MM/DD/YYYY format for date. Example: {now}',
-                color=0x42f4ee
-            )
-            await ctx.send(embed=embed)
-            return
-        count = 0
-        with open(jfile, 'r') as f:
-            data = json.load(f)
-            for server in data['guilds']:
-                if str(guild) in server:
-                    count += 1
-                    g = server.get(str(guild))
-                    for _ in g:
-                        data_day = g.get('date')
-                        data_title = g.get('title')
-                        if date == data_day:
-                            embed = discord.Embed(color=0x42f4ee)
-                            embed.set_author(name=f'{author.display_name} has removed a special day.', icon_url=author.avatar_url)
-                            embed.add_field(name='Title', value=data_title, inline=True)
-                            embed.add_field(name='Date', value=data_day, inline=True)
-                            del g['date']
-                            del g['title']
-                            with open(jfile, 'w') as f:
-                                json.dump(data, f, indent=4)
-                            await ctx.send(embed=embed)
-                            return
-            if count == 0:
-                embed = discord.Embed(title='There are no speical days added yet.', color=0x42f4ee)
-                await ctx.send(embed=embed)
-    
-    @commands.guild_only()
-    @commands.command()
-    async def view(self, ctx):
-        jfile = os.path.join(os.getcwd(), 'data', 'specialdays.json')
-        guild = self.bot.get_guild(ctx.guild.id)
-        num = 0
-        with open(jfile, 'r') as f:
-            data = json.load(f)
-            for g in data['guilds']:
-                if str(guild) in g:
-                    for _ in g.get(str(guild)):
-                        num += 1
-        if num == 0:
-            embed = discord.Embed(title='There are no speical days added yet.', color=0x42f4ee)
-            await ctx.send(embed=embed)
-        else:
-            embed = discord.Embed(title='Special Days', color=0x42f4ee)
-            with open(jfile, 'r') as f:
-                data = json.load(f)
-                for day in data['days']:
-                    data_day = day.get('date')
-                    data_title = day.get('title')
-                    embed.add_field(name=data_title, value=data_day, inline=True)
-            await ctx.send(embed=embed)
-    
-    @commands.guild_only()
-    @commands.command()
-    @commands.has_permissions(administrator=True)
-    async def setchannel(self, ctx, channelset):
-        channel = ctx.message.channel
-        author = ctx.messge.author
-        guild = ctx.guild
-        channel_id = ''
-        channelset = str(channelset[2:-1])
-        set_channel = ''
-        jfile = os.path.join(os.getcwd(), 'data', 'specialdaysconfig.json')
-        data = {}
-        data['channels'] = []
-        data['channels'].append(
-            {
-                'channel': channelset
-            }
-        )
-        with open(jfile, 'w') as f:
-            json.dump(data, f, indent=4)
-        with open(jfile, 'r') as f:
-            for g in data['channels']:
-                set_thing = g.get('channel')
-                channel_id = set_thing
-                set_channel = self.bot.get_channel(int(set_thing))
-        embed = discord.Embed(
-            description=f'<#{channel_id}> will now be used for all special day notifications.',
-            color=0x42f4ee
-        )
-        embed.set_author(
-            name=f'{author.display_name} has changed the special day notification channel.',
-            icon_url=author.avatar_url
-        )
+        # Add a field for every command
+        embed.add_field(name='f!setchannel <#channel>', value='Use this command to set what channel special days are notified in.')
+        embed.add_field(name='f!add <day> <name>', value='Add a special day, please use MM/DD/YYYY format.', inline=False)
+        embed.add_field(name='f!remove <day>', value='Remove a special day, please use MM/DD/YYYY format.', inline=False)
+        embed.add_field(name='f!view', value='View all special days.', inline=False)
         await ctx.send(embed=embed)
 
+        # Warn the user if they don't have admin privileges
+        if not ctx.author.permissions_in(channel=ctx.channel).administrator:
+            embed = discord.Embed(title='You require admin privileges permission to use most of these commands.', color=0xff0000)
+            await ctx.send(embed=embed)
+
+
+    @commands.guild_only()
+    @commands.command(aliases=['aevent', 'eventadd', 'ae'])
+    @commands.has_permissions(administrator=True)
+    async def addevent(self, ctx, day, *, name: str = None):
+        '''
+        Add a special day. Use the `MM/DD/YYYY` format.
+        '''
+        today = datetime.datetime.now().strftime("%m/%d/%Y")
+
+        # Check if the day is valid
+        if len(today) != 10 or list(map(lambda part: not part.isdigit(), day.split("/"))):
+            embed = discord.Embed(title=f'Please use the format MM/DD/YYYY for the date. Example: {today}', color=0xff0000)
+            await ctx.send(embed=embed)
+            return
+
+        # Check if there is a name for the event
+        if not name:
+            embed = discord.Embed(title='Please enter a name for the event', color=0xff0000)
+            await ctx.send(embed=embed)
+            return
+
+        # Set the event data (which is to be put in the events["guilds"]["events"] dict)
+        event_data = [
+            name.lower(): {
+                "set": time.time(),
+                "set_by": ctx.author.id,
+                "name": name,
+                "date": day
+            }
+        ]
+
+        # Create embed for successfull addition of event
+        embed = discord.Embed(color=0x00ff00)
+        embed.set_author(name=f'{author.display_name} sucessfully added a special day!', icon_url=author.avatar_url)
+        embed.add_field(name='Title', value=name, inline=True)
+        embed.add_field(name='Date', value=day, inline=True)
+        await ctx.send(embed=embed)
+        
+        # Load data from json file
+        async with aiofiles.open(self.jfile, 'r') as r:
+            data = json.load(r)
+
+        # Check if events are already registered in this guild
+        if ctx.guild.id in data["guilds"]:
+            data["guilds"]["events"].append(event_data)
+
+        else:
+            data["guilds"][ctx.guild.id] = {}
+            data["guilds"][ctx.guild.id]["events"] = []
+            data["guilds"]["events"].append(event_data)
+
+        # Dump data into file
+        async with aiofiles.open(self.jfile, "w") as f:
+            await f.write(json.dumps(data))
+    
+    @commands.guild_only()
+    @commands.command(aliases=['revent', 'eventremove', 're'])
+    @commands.has_permissions(administrator=True)
+    async def removeevent(self, ctx, name):
+        '''
+        Remove a special day.
+        '''
+        # Load data
+        async with aiofiles.open(self.jfile, 'r') as f:
+            data = json.loads(await f.read(f))
+
+        # Set the embed straight away as it will be used in the following two if statements
+        embed = discord.Embed(title='There are no speical days added yet.', color=0xff0000)
+
+        # Check if the guild is registered
+        if not ctx.guild.id in data["guilds"]:
+            await ctx.send(embed=embed)
+            return
+
+        # Check if there are no registered events
+        if not data["guilds"][ctx.guild.id]["events"]:
+            await ctx.send(embed=embed)
+            return
+        
+        # Check if an event with the given name exists
+        events = data["guilds"][ctx.guild.id]["events"]
+        if name.lower() in list(next(e) for e in events):
+            # Delete the event
+            [del event async for event in asyncio.gather(map(lambda x: x, events)) if event["name"] == name.lower()]
+
+            # Create the embed for a successfull delete
+            embed = discord.Embed(colour=0x00ff00)
+            embed.set_author(name=f'{author.display_name} has successfully removed a special day.', icon_url=author.avatar_url)
+            embed.add_field(name='Title', value=data_title, inline=True)
+            embed.add_field(name='Date', value=data_day, inline=True)
+            await ctx.send(embed=embed)
+            return
+        else:
+            # Create the embed for if the event is not found
+            embed = discord.Embed(colour=0xff0000)
+            embed.set_author(name='The event you tried to remove was not found.')
+            await ctx.send(embed=embed)
+            return
+    
+    @commands.guild_only()
+    @commands.command(aliases=['events', 'days'])
+    async def viewevents(self, ctx):
+        '''
+        View all events that is set in the guild
+        '''
+        # Load data
+        async with aiofiles.open(self.jfile, 'r') as f:
+            data = json.loads(await f.read(f))
+
+        # Set the embed straight away as it will be used in the following two if statements
+        embed = discord.Embed(title='There are no speical days added yet.', color=0xff0000)
+
+        # Check if the guild is registered
+        if not ctx.guild.id in data["guilds"]:
+            await ctx.send(embed=embed)
+            return
+
+        # Check if there are no registered events
+        if not data["guilds"][ctx.guild.id]["events"]:
+            await ctx.send(embed=embed)
+            return
+
+        # Creating embed to show all registered events 
+        embed = discord.Embed(title='Special Days', color=discord.Colour.blurple())
+        events = data["guilds"][ctx.guild.id]["events"]
+        for event in events:
+            name = event["name"]
+            date = event["date"]
+            embed.add_field(name=name, value=date, inline=True)
+        await ctx.send(embed=embed)
+    
+    @commands.guild_only()
+    @commands.command(aliases=['channelset'])
+    @commands.has_permissions(administrator=True)
+    async def setchannel(self, ctx, channelset):
+        '''
+        Set the channel in which you will get notified of the special day!
+        '''
+        if channelset.lower() == "None":
+            embed = discord.Embed(title="This guild will no longer be notified about events.", colour=0xffff00)
+            await ctx.send(embed=embed)
+            return
+
+        # We want to be able to work with the channel id which will lie between <# and >
+        if not channelset or not (channelset.beginswith("<#") and channelset.endswith(">")):
+            embed = discord.Embed(title="Please enter the channel you want events to be posted in by tagging it with the `#` symbol, like this: <#{0.channel.id}>".format(ctx))
+            await ctx.send(embed=embed)
+            return
+
+        # Load data
+        async with aiofiles.open(self.jfile, 'r') as f:
+            data = json.loads(await f.read(f))
+
+        # Change data
+        data["guilds"][ctx.guild.id]["channel"] = channelset[2:-1]
+
+        # Save data
+        async with aiofiles.open(self.jfile, "w") as f:
+            await f.write(json.dumps(data))
+
+        # Create embed for success message
+        embed = discord.Embed(description=f'<#{channelID}> will now be used for all special day notifications.', colour=0x00ff00)
+        embed.set_author(name=f'{author.display_name} has successfully changed the special day notification channel.', icon_url=author.avatar_url)
+        await ctx.send(embed=embed)
+
+
+    # Error handling
     @add.error
     async def add_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            embed = discord.Embed(title='Please give all required arguments.', color=0x42f4ee)
+            embed = discord.Embed(title='Please give all required arguments.', colour=0xff0000)
             await ctx.send(embed=embed)
         elif isinstance(error, commands.MissingPermissions):
-            embed = discord.Embed(title='You do not have permission to use this command.', color=0x42f4ee)
+            embed = discord.Embed(title='You do not have permission to use this command.', colour=0xff0000)
             await ctx.send(embed=embed)
 
     @remove.error
     async def remove_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            embed = discord.Embed(title='Please give all required arguments.', color=0x42f4ee)
+            embed = discord.Embed(title='Please give all required arguments.', colour=0xff0000)
             await ctx.send(embed=embed)
         elif isinstance(error, commands.MissingPermissions):
-            embed = discord.Embed(title='You do not have permission to use this command.', color=0x42f4ee)
+            embed = discord.Embed(title='You do not have permission to use this command.', colour=0xff0000)
             await ctx.send(embed=embed)
     
     @setchannel.error
     async def setchannel_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            embed = discord.Embed(title='Please give all required arguments.', color=0x42f4ee)
+            embed = discord.Embed(title='Please give all required arguments.', colour=0xff0000)
             await ctx.send(embed=embed)
         elif isinstance(error, commands.MissingPermissions):
-            embed = discord.Embed(title='You do not have permission to use this command.', color=0x42f4ee)
+            embed = discord.Embed(title='You do not have permission to use this command.', colour=0xff0000)
             await ctx.send(embed=embed)
 
 
