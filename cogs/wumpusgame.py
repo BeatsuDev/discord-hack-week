@@ -13,7 +13,7 @@ class WumpusGame(commands.Cog):
         self.land = []
 
 
-    @commands.command()
+    @commands.command(aliases=['play wumpus', 'playw', 'pw'])
     async def play(self, ctx, difficulty="normal"):
         '''Play a game where you save Wumpus from Discord island'''
         msgs = []
