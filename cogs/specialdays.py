@@ -149,34 +149,37 @@ class SpecialDay(commands.Cog):
         embed = discord.Embed(title='There are no speical days added yet.', color=0xff0000)
 
         # Check if the guild is registered
-        if not ctx.guild.id in data["guilds"]:
+        if not str(ctx.guild.id) in data["guilds"]:
             await ctx.send(embed=embed)
             return
 
         # Check if there are no registered events
-        if not data["guilds"][ctx.guild.id]["events"]:
+        if not data["guilds"][str(ctx.guild.id)]["events"]:
             await ctx.send(embed=embed)
             return
         
         # Check if an event with the given name exists
-        events = data["guilds"][ctx.guild.id]["events"]
+        events = data["guilds"][str(ctx.guild.id)]["events"]
         if name.lower() in events:
-            # Delete the event
-            del events[name.lower()]
-
             # Create the embed for a successfull delete
-            embed = discord.Embed(colour=0x00ff00)
-            embed.set_author(name=f'{author.display_name} has successfully removed a special day.', icon_url=author.avatar_url)
-            embed.add_field(name='Title', value=data_title, inline=True)
-            embed.add_field(name='Date', value=data_day, inline=True)
+            embed = discord.Embed(colour=0xffff00)
+            embed.set_author(name=f'{ctx.author.display_name} has successfully removed a special day.', icon_url=ctx.author.avatar_url)
+            embed.add_field(name='Title', value=events[name.lower()]["name"], inline=True)
+            embed.add_field(name='Date', value=events[name.lower()]["date"], inline=True)
             await ctx.send(embed=embed)
-            return
+            
+            # Delete the event
+            del data["guilds"][str(ctx.guild.id)]["events"][name.lower()]
+
+            # Save data
+            async with aiofiles.open(self.jfile, "w") as f:
+                await f.write(json.dumps(data))
+
         else:
             # Create the embed for if the event is not found
             embed = discord.Embed(colour=0xff0000)
             embed.set_author(name='The event you tried to remove was not found.')
             await ctx.send(embed=embed)
-            return
     
     @commands.guild_only()
     @commands.command(aliases=['events', 'days'])
