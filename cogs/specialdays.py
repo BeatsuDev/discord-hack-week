@@ -24,6 +24,7 @@ class SpecialDay(commands.Cog):
         self.bot = bot
         self.loop = asyncio.get_event_loop()
         self.jfile = os.path.join(os.getcwd(), 'data', 'events.json')
+        self.day = datetime.date.min
 
         # Fill json file if it is empty
         if not os.path.getsize(self.jfile) > 0:
@@ -31,6 +32,8 @@ class SpecialDay(commands.Cog):
             data["guilds"] = {}
             with open(self.jfile, "w") as f:
                 json.dump(data, f)
+
+        self.loop.create_task(self.ticktock())
 
         '''
         JSON structure:
@@ -50,6 +53,51 @@ class SpecialDay(commands.Cog):
             },
         }
         '''
+
+    async def ticktock(self):
+        '''
+        I'm a clock 
+        '''
+        today = datetime.date.today()
+        while 1:
+            embed = discord.Embed(colour=discord.Colour.blurple())
+            if self.day != today.day:
+                self.day = today.day
+                
+                # Load data
+                async with aiofiles.open(self.jfile, mode='r') as f:
+                    data = await f.read()
+                    data = json.loads(data)
+                
+                # Distribute event notifications
+                for guild in data["guilds"]:
+                    try:
+                        if data["guilds"][guild]["channel"]:
+                            found_event = False
+                            events = data["guilds"][guild]["events"]
+                            for e in events:
+                                if tuple(events[e]["date"].split("/")[:2]) == tuple(today.strftime('%m/%d/%Y').split("/")[:2]):
+                                    embed.add_field(name="Time to celebrate {}!".format(events[e]["name"]), value="It's {}".format(events[e]["date"]), inline=True)
+                                    found_event = True
+
+                            if found_event:
+                                # Need to take a long route to get a channel with the `send` coroutine function. discord.abs.GuildChannel has no send() function.
+                                try:
+                                    txts = (self.bot.get_channel(int(data["guilds"][guild]["channel"])).guild).text_channels
+                                    for channel in txts:
+                                        if channel.id == int(data["guilds"][guild]["channel"]):
+                                            ch = channel
+                                    await ch.send(embed=embed)
+                                except Exception as e:
+                                    print(e)
+
+                    except KeyError:
+                        pass
+                            
+            await asyncio.sleep(60*60)
+                
+
+
 
 
     @commands.guild_only()
@@ -133,6 +181,7 @@ class SpecialDay(commands.Cog):
         async with aiofiles.open(self.jfile, mode="w") as f:
             await f.write(json.dumps(data))
     
+
     @commands.guild_only()
     @commands.command(aliases=['revent', 'eventremove', 're'])
     @commands.has_permissions(administrator=True)
@@ -181,6 +230,7 @@ class SpecialDay(commands.Cog):
             embed.set_author(name='The event you tried to remove was not found.')
             await ctx.send(embed=embed)
     
+
     @commands.guild_only()
     @commands.command(aliases=['events', 'days'])
     async def viewevents(self, ctx):
@@ -214,6 +264,7 @@ class SpecialDay(commands.Cog):
             embed.add_field(name=name, value=date, inline=True)
         await ctx.send(embed=embed)
     
+
     @commands.guild_only()
     @commands.command(aliases=['channelset'])
     @commands.has_permissions(administrator=True)
