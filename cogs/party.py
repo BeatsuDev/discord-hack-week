@@ -30,7 +30,7 @@ class Party(commands.Cog):
         # Check if there's a party in the channel already
         if ctx.channel.id in self.parties: 
             embed = discord.Embed(description="Party in <@{}> already!".format(ctx.channel.id))
-            embed.set_author(icon_url=ctx.author.avatar_url, text="You're missing out {}! There's already a party in here!".format())
+            embed.set_author(icon_url=ctx.author.avatar_url, name="You're missing out {}! There's already a party in here!".format(ctx.author.name))
             e = await ctx.send(embed=embed)
             await asyncio.sleep(10)
             await e.delete()
@@ -45,11 +45,11 @@ class Party(commands.Cog):
             message = "This channel is now in party mode, authorized by {0.author.display_name}.\n\nEnjoy! :tada:".format(ctx)
 
         # Create the embed
-        embed = discord.Embed(title=title, description=message)
+        embed = discord.Embed(title=title, description=message, colour=colour)
         embed.set_author(icon_url=ctx.author.avatar_url, name=ctx.author.display_name+ " just activated PARTY MODE!")
 
         # Send the embed and message that will be edited as an animation
-        emsg = await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
         pmsg = await ctx.send("It's time for a party!")
 
         await asyncio.sleep(5)
@@ -60,7 +60,7 @@ class Party(commands.Cog):
             await self.animate(pmsg)
 
         # Remove the channel ID from self.parties.
-        async for i in range(len(self.parties)):
+        for i in range(len(self.parties)):
             if i == ctx.channel.id:
                 del self.parties[i]
                 return
