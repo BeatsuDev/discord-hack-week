@@ -11,6 +11,8 @@ class JayCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.bot_message = None
+        self.ready = None
 
     # commands for your cog go here
     @commands.command()
