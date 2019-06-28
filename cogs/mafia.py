@@ -397,6 +397,7 @@ class MafiaGames:
 
     # Finished
     def find_player_game(self, user: discord.User):
+        print("FIND PLAYER GAME IS BEING INVOKED NOW")
         game = None
         try:
             guildID = user.guild.id
@@ -515,12 +516,13 @@ class Mafia(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, ctx):
-        if ctx.author == self.bot:
+        if ctx.author == self.bot.user:
             return
         if not isinstance(ctx.channel, discord.DMChannel):
             return
         
         game = self.games_manager.find_player_game(ctx.author)
+        print(game)
         if game.night:
             if game.players[ctx.author.id] == "mafia":
                 for m in game.players:
