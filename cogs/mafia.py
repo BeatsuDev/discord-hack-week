@@ -408,6 +408,7 @@ class MafiaGames:
 
     # Finished
     def find_guild_game(self, guildID:int):
+        print(self.games)
         if str(guildID) in self.games:
             return self.games[str(guildID)]
         return None
@@ -416,8 +417,11 @@ class MafiaGames:
     def create_game(self, channel:discord.TextChannel, host:discord.Member):
         guild = channel.guild
         if not str(guild.id) in self.games:
+            print("Here we go")
             game = Game(self.bot, channel, host)
             self.games[guild.id] = game
+            print(game)
+            print(self.games)
             return game
         else:
             raise AlreadyPlayingError("There is already an ongoing game in the guild")
@@ -459,6 +463,7 @@ class Mafia(commands.Cog):
         embed.add_field(name="Mafia count:", value="1")
         embed.add_field(name="Total players:", value="1")
         m = await ctx.send(embed=embed)
+        await m.add_reaction("✅")
         self.join_msgs.append(m.id)
         await asyncio.sleep(45)
         del self.join_msgs[0]
@@ -481,11 +486,20 @@ class Mafia(commands.Cog):
     async def on_reaction_add(self, reaction, user):
         if not isinstance(reaction.message.channel, discord.TextChannel): return
         if not reaction.message.id in self.join_msgs: return
+        if user.bot: return
+        if reaction.emoji != "✅":
+            await reaction.delete()
+            return
         
         game = self.games_manager.find_guild_game(user.guild.id)
         try:
             if not self.games_manager.find_player_game(user.id):
                 game.add_player(user)
+                embed = reaction.message.embeds[0]
+                embed.clear_fields()
+                embed.add_field(name="Mafia count:", value=int(len(game.players)/3.5))
+                embed.add_field(name="Total players:", vlaue=len(game.players))
+                await reaction.message.edit(embed=embed)
             else:
                 await user.send("You are already in a game on another server!")
         except AlreadyJoinedError:
