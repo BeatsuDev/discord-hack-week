@@ -28,8 +28,8 @@ Here goes a feeble attempt at organizing my brain:
         create_game         # Finished
 
     events:
-        on_message          #
         on_reaction_add     #
+        on_message          #
 '''
 
 class AlreadyJoinedError(Exception):
@@ -56,6 +56,18 @@ class PlayerNotFoundError(Exception):
 
 class Game:
     def __init__(self, bot, channel: discord.TextChannel, host: discord.User):
+        '''
+        players {playerIDstr: role, playerIDstr: role}
+        dead {playerIDstr: role, playerIDstr: role}
+
+        mafia [playerIDint, playerIDint]
+        inv [playerIDint, playerIDint]
+
+        channel     discord.TextChannel
+        host        discord.User
+        started     bool
+        night       bool
+        '''
         self.channel = channel
         self.host = host
         self.players = {}
@@ -91,14 +103,22 @@ class Game:
                     if self.inv[i] == p:
                         del self.inv[i]
 
-
+    # Finished
     async def add_player(self, member):
+        '''
+        Add a player to the game
+        '''
         if len(self.players) >= 20:
             embed = discord.Embed(title="Too many people have already joined!", colour=0xff0000)
             await self.channel.send(embed=embed)
 
         if self.started: 
             raise AlreadyPlayingError("The game has already started")
+
+        if str(member.id) in self.players:
+            raise AlreadyJoinedError("The player is already in the game")
+
+        self.players[member.id] = None
 
 '''
         player = member
@@ -120,7 +140,7 @@ class Game:
 '''
 
 
-
+    # Finished
     async def start_game(self):
         '''
         Start the game
@@ -187,7 +207,20 @@ class Game:
         '''
         self.night = True
         await asyncio.sleep(20)
-        discord.embed
+        # List of `discord.Message` sent to all DMs
+        messages = []
+        for m in self.mafia:
+            u = await self.bot.fetch_user(m)
+            votes.append(self.choose_player(channel=u, exclude="mafia"))
+        
+        votes = []
+        for msg in votes:
+            # Message Reactions
+            mr = []
+            for reaction in msg.reactions:
+                mr.append(reaction.count)
+            votes.append(mr)
+
         await self.channel.send(f"{killed} was murdered at night.")
 
     async def day(self):
@@ -251,7 +284,12 @@ class Game:
         await self.channel.send("The day is now over. Good night.")
 
 
-    def choose_player(self, channel, exclude=None, time=20):
+    def choose_player(self, channel, exclude=None):
+        '''
+        Returns a `discord.Message` object
+
+        The message has already been added the appropriate reactions.
+        '''
         players_to_list = []
         if not exclude:
             [players_to_list.append(p) for p in self.players]
@@ -271,14 +309,9 @@ class Game:
 
         embed = discord.Embed(title="Vote for a player:", description=desc)
         vote_msg = await channel.send(embed=embed)
-        for i in range(len(self.players)):
+        for i in range(len(players_to_list)):
             await vote_msg.add_reaction(f":regional_indicator_{letter[i]}:")
-
-        await asyncio.sleep(time)
-        top_vote = None
-        if max(vote)
-
-        return top_vote
+        return vote_msg
 
 
 class MafiaGames:
