@@ -31,7 +31,7 @@ Here goes a feeble attempt at organizing my brain:
         on_message          # Finished
 
     commands:
-        playmafia           # 
+        playmafia           # Finished
 '''
 
 class AlreadyJoinedError(Exception):
@@ -53,6 +53,9 @@ class NoGameInGuildError(Exception):
     pass
         
 class PlayerNotFoundError(Exception):
+    pass
+
+class GameNotFoundError(Exception):
     pass
 
 
@@ -132,9 +135,11 @@ class Game:
         Start the game
         '''
         if len(self.players) < 5:
-            embed = discord.Embed(title="Too few people to start", colour=0xff0000)
-            await self.channel.send(embed=embed)
             raise NotEnoughPlayersError("Not enough players are registered to this class for the game to start")
+        
+        if len(self.players) > 20:
+            raise NotEnoughPlayersError("Too many players are registered to this class for the game to start")
+
         
         if self.started:
             raise AlreadyPlayingError("The game has already started")
@@ -408,15 +413,22 @@ class MafiaGames:
         return None
 
     # Finished
-    def create_game(self, channel=discord.TextChannel, host=discord.Member):
+    def create_game(self, channel:discord.TextChannel, host:discord.Member):
         guild = channel.guild
         if not str(guild.id) in self.games:
-            self.games[guild.id] = Game(self.bot, channel, host)
+            game = Game(self.bot, channel, host)
+            self.games[guild.id] = game
+            return game
         else:
             raise AlreadyPlayingError("There is already an ongoing game in the guild")
 
 
-
+    def delete_game(self, guildID: int):
+        guildID = str(guildID)
+        try:
+            del self.games[guildID]
+        except KeyError:
+            raise GameNotFoundError("The game you tried to delete was not found")
 
 
 
@@ -441,7 +453,7 @@ class Mafia(commands.Cog):
         if not isinstance(ctx.channel, discord.TextChannel):
             return
 
-        self.games_manager.create_game(ctx.channel, ctx.author)
+        game = self.games_manager.create_game(ctx.channel, ctx.author)
         embed = discord.Embed(description="Join a game of mafia! Starts in 45 seconds if there are 5-20 players.", colour=ctx.author.colour or discord.Colour.blurple())
         embed.set_author(name=f"React to join {ctx.author.name}'s game of mafia", icon_url=ctx.author.avatar_url)
         embed.add_field(name="Mafia count:", value="1")
@@ -450,6 +462,19 @@ class Mafia(commands.Cog):
         self.join_msgs.append(m.id)
         await asyncio.sleep(45)
         del self.join_msgs[0]
+
+        try:
+            await game.start_game()
+        except NotEnoughPlayersError:
+            embed = discord.Embed(title="Too few people to start", colour=0xff0000)
+            await ctx.send(embed=embed)
+            self.games_manager.delete_game(ctx.guild.id)
+
+        except TooManyPlayersError:
+            embed = discord.Embed(title="Too many people to start", colour=0xff0000)
+            await ctx.send(embed=embed)
+            self.games_manager.delete_game(ctx.guild.id)
+            
 
 
     @commands.Cog.listener()
