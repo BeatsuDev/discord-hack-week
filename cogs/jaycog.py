@@ -81,10 +81,10 @@ class JayCog(commands.Cog):
 
         
         
-        source = FFmpegPCMAudio('music/call_ringing_beat.mp3')
+        source = FFmpegPCMAudio('music/better sounds/call_ringing_beat.wav')
         self.vcl.play(source)
         await ctx.send("You will be able to play in just a sec ;)")
-        await asyncio.sleep(22)
+        await asyncio.sleep(12)
         self.ready = True
     
     @commands.command(aliases=["stop"])     
