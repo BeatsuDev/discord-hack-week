@@ -105,35 +105,35 @@ class JayCog(commands.Cog):
 
         try:
             if reaction.emoji == "🎹":
-                g3 = FFmpegPCMAudio('music/better sounds/g3.wav')
+                g3 = FFmpegPCMAudio('music/better sounds/c5.wav')
                 self.vcl.play(g3)
 
             elif reaction.emoji == "🇦":
-                a4 = FFmpegPCMAudio('music/better sounds/a4.wav')
+                a4 = FFmpegPCMAudio('music/better sounds/d5.wav')
                 self.vcl.play(a4)
 
             elif reaction.emoji == "🇧":
-                b4 = FFmpegPCMAudio('music/better sounds/b4.wav')
+                b4 = FFmpegPCMAudio('music/better sounds/e5.wav')
                 self.vcl.play(b4)
 
             elif reaction.emoji == "🇨":
-                c4 = FFmpegPCMAudio('music/better sounds/c4.wav')
+                c4 = FFmpegPCMAudio('music/better sounds/f5.wav')
                 self.vcl.play(c4)
 
             elif reaction.emoji == "🇩":
-                d4 = FFmpegPCMAudio('music/better sounds/d4.wav')
+                d4 = FFmpegPCMAudio('music/better sounds/g5.wav')
                 self.vcl.play(d4)
 
             elif reaction.emoji == "🇪":
-                e4 = FFmpegPCMAudio('music/better sounds/e4.wav')
+                e4 = FFmpegPCMAudio('music/better sounds/a6.wav')
                 self.vcl.play(e4)
 
             elif reaction.emoji == "🇫":
-                f4 = FFmpegPCMAudio('music/better sounds/f4.wav')
+                f4 = FFmpegPCMAudio('music/better sounds/b6.wav')
                 self.vcl.play(f4)
 
             elif reaction.emoji == "🇬":
-                g4 = FFmpegPCMAudio('music/better sounds/g4.wav')
+                g4 = FFmpegPCMAudio('music/better sounds/c6.wav')
                 self.vcl.play(g4)
         except discord.errors.ClientException:
             pass
@@ -150,36 +150,36 @@ class JayCog(commands.Cog):
             await reaction.message.channel.send(embed=embed)
         try:
             if reaction.emoji == "🎹":
-                g3 = FFmpegPCMAudio('music/g3.wav')
-                self.vcl.play(g3)
+                c5 = FFmpegPCMAudio('music/better sounds/c5.wav')
+                self.vcl.play(c5)
 
             elif reaction.emoji == "🇦":
-                a4 = FFmpegPCMAudio('music/a4.wav')
-                self.vcl.play(a4)
+                d5 = FFmpegPCMAudio('music/better sounds/d5.wav')
+                self.vcl.play(d5)
 
             elif reaction.emoji == "🇧":
-                b4 = FFmpegPCMAudio('music/b4.wav')
-                self.vcl.play(b4)
+                e5 = FFmpegPCMAudio('music/better sounds/e5.wav')
+                self.vcl.play(e5)
 
             elif reaction.emoji == "🇨":
-                c4 = FFmpegPCMAudio('music/c4.wav')
-                self.vcl.play(c4)
+                f5 = FFmpegPCMAudio('music/better sounds/f5.wav')
+                self.vcl.play(f5)
 
             elif reaction.emoji == "🇩":
-                d4 = FFmpegPCMAudio('music/d4.wav')
-                self.vcl.play(d4)
+                g5 = FFmpegPCMAudio('music/better sounds/g5.wav')
+                self.vcl.play(g5)
 
             elif reaction.emoji == "🇪":
-                e4 = FFmpegPCMAudio('music/e4.wav')
-                self.vcl.play(e4)
+                a6 = FFmpegPCMAudio('music/better sounds/a6.wav')
+                self.vcl.play(a6)
 
             elif reaction.emoji == "🇫":
-                f4 = FFmpegPCMAudio('music/f4.wav')
-                self.vcl.play(f4)
+                b6 = FFmpegPCMAudio('music/better sounds/b6.wav')
+                self.vcl.play(b6)
 
             elif reaction.emoji == "🇬":
-                g4 = FFmpegPCMAudio('music/g4.wav')
-                self.vcl.play(g4)
+                c6 = FFmpegPCMAudio('music/better sounds/c6.wav')
+                self.vcl.play(c6)
         except discord.errors.ClientException:
             pass
         
