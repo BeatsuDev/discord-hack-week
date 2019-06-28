@@ -46,13 +46,13 @@ class JayCog(commands.Cog):
     @commands.command(aliases=["pt", "piano", "playpiano"])
     async def pianotime(self, ctx):
         self.ready = False
-        vc = ctx.message.author.voice.channel
-        if not vc:
+        try:
+            vc = ctx.message.author.voice.channel
+            self.vcl = await vc.connect()
+        except:
             embed = discord.Embed(colour=0xff0000)
             embed.set_author(icon_url=ctx.message.author.avatar_url, name=ctx.message.author.display_name + ", you're not in a vc! Please connect to one before playing the piano")
             await ctx.send(embed=embed)
-        else:
-            self.vcl = await vc.connect()
 
         self.notes = ['🎹', '🇦', '🇧', '🇨', '🇩', '🇪', '🇫', '🇬']
         msg = """Heyy {} it's Piano Time! It's Discord's Hack Week, Let's get Frizzy! 
@@ -79,6 +79,7 @@ class JayCog(commands.Cog):
         
         
         source = FFmpegPCMAudio('music/call_ringing_beat.mp3')
+        self.vcl.play(source)
         await ctx.send("You will be able to play in just a sec ;)")
         await asyncio.sleep(22)
         self.ready = True
