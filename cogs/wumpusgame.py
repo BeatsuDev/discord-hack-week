@@ -86,7 +86,7 @@ Tell me where to send the Discord staff by sending x and y coordinates (using th
 
         try:
             upx = (int(upx[0]), int(upx[1]))
-        except TyperError:
+        except TypeError:
             errmsg = await ctx.send("Doesn't seem like you parsed numbers. Use the format **0000x0000**, for example **481x1299**")
             await asyncio.sleep(20)
             [await m.delete() for m in msgs]
