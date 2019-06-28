@@ -10,7 +10,7 @@ from keys import API_KEY
 
 class Bot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix="f!")
+        super().__init__(command_prefix="e!")
         self.remove_command("help")
         self.add_command(self.help)
         self.add_command(self.ping)
@@ -23,7 +23,7 @@ class Bot(commands.Bot):
     async def help(ctx):
         message = """Hello! My name is Frizzler! I am a bot created for Discord's Hack Week! 
         
-        Prefix: **f!**
+        Prefix: **e!**
 
         Availale commands:
         """
@@ -63,5 +63,6 @@ async def run():
         await bot.logout()
 
 if __name__ == '__main__':
+    os.system("pip install -r requirements.txt")
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run())

@@ -134,7 +134,7 @@ class Game:
         '''
         Start the game
         '''
-        if len(self.players) < 5:
+        if len(self.players) < 3:
             raise NotEnoughPlayersError("Not enough players are registered to this class for the game to start")
         
         if len(self.players) > 20:
@@ -166,7 +166,7 @@ class Game:
                 self.inv.append(u)
 
         await self.first_night()
-        while self.players > 1:
+        while len(self.players) > 1:
             if not self.mafia:
                 break
             if len(self.mafia) == len(self.players):
@@ -176,11 +176,11 @@ class Game:
             
         if self.mafia == len(self.players):
             embed = discord.Embed(colour=0xed6868)
-            embed.set_author(name="The mafia won!", icon_url=self.mafia[0].avatar_url)
+            embed.set_author(name="The mafia won!")
             await self.channel.send(embed=embed)
         else:
             embed = discord.Embed(colour=0xb7e887)
-            embed.set_author(name="The villagers won!", icon_url=self.players[0].avatar_url)
+            embed.set_author(name="The villagers won!")
             await self.channel.send(embed=embed)
         
 
@@ -190,7 +190,7 @@ class Game:
         Same as a normal night, just with introduction to role and what to do.
         '''
         for p in self.players:
-            u = self.bot.fetch_user(int(p))
+            u = await self.bot.fetch_user(int(p))
             await u.send(f"You got the role: **{self.players[p]}**\n")
             if self.players[p] == "villager":
                 await u.send('''Your job is to lynch suspicious players at day time by convincing others to vote them off. You're a good person!''')
@@ -214,7 +214,7 @@ Be careful with sharing what you know however! Or else, next night you may be de
             for m in self.mafia:
                 u = await self.bot.fetch_user(m)
                 await u.send("You may now speak with the other mafia by sending messages here")
-        await asyncio.sleep(20)
+        await asyncio.sleep(45)
         # List of `discord.Message` sent to all the mafia's DMs
         messages = []
         for m in self.mafia:
@@ -291,7 +291,15 @@ Be careful with sharing what you know however! Or else, next night you may be de
         '''
         self.night = False
 
-        letter = list("abcdefghijklmnopqrst")
+        letter = "abcdefghijklmnopqrst"
+        regletters = []
+        # Regional Indicator A
+        reg_A = 0x0001f1e6
+        for i in range(20):
+            e = f'\\U{base + i :08x}'.encode().decode("unicode-escape")
+            regletters.append(e)
+
+
         await self.channel.send("Good morning! Let the discussion period begin!")
         await asyncio.sleep(30)
         
@@ -305,7 +313,7 @@ Be careful with sharing what you know however! Or else, next night you may be de
         embed = discord.Embed(title="Vote for who to lynch", description=desc, colour=discord.Colour.blurple())
         vote_msg = await self.channel.send(embed=embed)
         for i in range(len(self.players)):
-            await vote_msg.add_reaction(f":regional_indicator_{letter[i]}:")
+            await vote_msg.add_reaction({regletters[i]})
 
         await asyncio.sleep(15)
         counts = {}
@@ -313,7 +321,7 @@ Be careful with sharing what you know however! Or else, next night you may be de
             reactions = 0
             async for u in r.users():
                 reactions += 1
-            counts[str(r.emoji)] = reactions
+            counts[r.emoji] = reactions
         
         vals = list(i for i in counts.values())
         if len(vals.count(max(vals))) == 1:
@@ -324,7 +332,10 @@ Be careful with sharing what you know however! Or else, next night you may be de
             await self.channel.send("The day is now over. No one was lynched. Good night.")
             return
 
-        rletter = str(voted.name)[-2]
+        for i in range(len(counts)):
+            if voted == regletters[i]:
+                rletter = letter[i]
+
         i = 0
         for l in letter:
             if l == rletter:
@@ -472,7 +483,7 @@ class Mafia(commands.Cog):
         await m.add_reaction("✅")
         self.join_msgs.append(m.id)
         
-        await asyncio.sleep(45)
+        await asyncio.sleep(20)
         del self.join_msgs[0]
 
         try:
@@ -522,7 +533,6 @@ class Mafia(commands.Cog):
             return
         
         game = self.games_manager.find_player_game(ctx.author)
-        print(game)
         if game.night:
             if game.players[ctx.author.id] == "mafia":
                 for m in game.players:
