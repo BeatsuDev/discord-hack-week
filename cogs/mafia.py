@@ -144,7 +144,7 @@ class Game:
         if self.started:
             raise AlreadyPlayingError("The game has already started")
         
-        mafia_count = int(len(self.players)/3.5)
+        mafia_count = int(len(self.players)/1.5)
         inv_count = int(round(len(self.players)/5, 0))
         vil_count = len(self.players) - mafia_count - inv_count
 
@@ -408,7 +408,6 @@ class MafiaGames:
 
     # Finished
     def find_player_game(self, user: discord.User):
-        print("FIND PLAYER GAME IS BEING INVOKED NOW")
         game = None
         try:
             guildID = user.guild.id
@@ -483,7 +482,7 @@ class Mafia(commands.Cog):
         await m.add_reaction("✅")
         self.join_msgs.append(m.id)
         
-        await asyncio.sleep(20)
+        await asyncio.sleep(45)
         del self.join_msgs[0]
 
         try:
