@@ -10,7 +10,7 @@ class ExampleCog(commands.Cog):
     # commands for your cog go here
     @commands.command()
     async def examplecommand(self, ctx):
-        #insert code
+        print('yup')
         await ctx.send("Hello! You triggered the example command from a cog!")
 
 def setup(bot):
