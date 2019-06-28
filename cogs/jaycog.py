@@ -79,7 +79,6 @@ class JayCog(commands.Cog):
         
         
         source = FFmpegPCMAudio('music/call_ringing_beat.mp3')
-        player = self.vcl.play(source)
         await ctx.send("You will be able to play in just a sec ;)")
         await asyncio.sleep(22)
         self.ready = True
@@ -99,40 +98,40 @@ class JayCog(commands.Cog):
 
         if not user.voice.channel.id:
             embed = discord.Embed(colour=0xff0000)
-            embed.set_author(icon_url=ctx.message.author.avatar_url, name=ctx.message.author.display_name + "You're not in a vc! Please connect to one before playing the piano")
-            await ctx.send(embed=embed)
+            embed.set_author(icon_url=user.avatar_url, name=user.display_name + ", you're not in a vc! Please connect to one before playing the piano")
+            await reaction.message.channel.send(embed=embed)
 
         try:
             if reaction.emoji == "🎹":
-                g3 = FFmpegPCMAudio('music/g3.wav')
+                g3 = FFmpegPCMAudio('music/better sounds/g3.wav')
                 self.vcl.play(g3)
 
             elif reaction.emoji == "🇦":
-                a4 = FFmpegPCMAudio('music/a4.wav')
+                a4 = FFmpegPCMAudio('music/better sounds/a4.wav')
                 self.vcl.play(a4)
 
             elif reaction.emoji == "🇧":
-                b4 = FFmpegPCMAudio('music/b4.wav')
+                b4 = FFmpegPCMAudio('music/better sounds/b4.wav')
                 self.vcl.play(b4)
 
             elif reaction.emoji == "🇨":
-                c4 = FFmpegPCMAudio('music/c4.wav')
+                c4 = FFmpegPCMAudio('music/better sounds/c4.wav')
                 self.vcl.play(c4)
 
             elif reaction.emoji == "🇩":
-                d4 = FFmpegPCMAudio('music/d4.wav')
+                d4 = FFmpegPCMAudio('music/better sounds/d4.wav')
                 self.vcl.play(d4)
 
             elif reaction.emoji == "🇪":
-                e4 = FFmpegPCMAudio('music/e4.wav')
+                e4 = FFmpegPCMAudio('music/better sounds/e4.wav')
                 self.vcl.play(e4)
 
             elif reaction.emoji == "🇫":
-                f4 = FFmpegPCMAudio('music/f4.wav')
+                f4 = FFmpegPCMAudio('music/better sounds/f4.wav')
                 self.vcl.play(f4)
 
             elif reaction.emoji == "🇬":
-                g4 = FFmpegPCMAudio('music/g4.wav')
+                g4 = FFmpegPCMAudio('music/better sounds/g4.wav')
                 self.vcl.play(g4)
         except discord.errors.ClientException:
             pass
@@ -145,8 +144,8 @@ class JayCog(commands.Cog):
 
         if not user.voice.channel.id:
             embed = discord.Embed(colour=0xff0000)
-            embed.set_author(icon_url=ctx.message.author.avatar_url, name=ctx.message.author.display_name + "You're not in a vc! Please connect to one before playing the piano")
-            await ctx.send(embed=embed)
+            embed.set_author(icon_url=user.avatar_url, name=user.display_name + "You're not in a vc! Please connect to one before playing the piano")
+            await reaction.message.channel.send(embed=embed)
         try:
             if reaction.emoji == "🎹":
                 g3 = FFmpegPCMAudio('music/g3.wav')
