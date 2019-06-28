@@ -92,7 +92,7 @@ class Game:
         '''
         Kills a player and adds them to the `dead` list 
         '''
-        uid = str(userID)
+        uid = userID
         if not uid in self.players:
             raise PlayerNotFoundError("The player was not found as an alive player in the game.")
         for p in self.players:
@@ -122,7 +122,7 @@ class Game:
         if self.started: 
             raise AlreadyPlayingError("The game has already started")
 
-        if str(member.id) in self.players:
+        if member.id in self.players:
             raise AlreadyJoinedError("The player is already in the game")
 
         self.players[member.id] = None
@@ -396,11 +396,18 @@ class MafiaGames:
         self.games = {}
 
     # Finished
-    def find_player_game(self, user: int):
+    def find_player_game(self, user: discord.User):
         game = None
-        user = str(user)
+        try:
+            guildID = user.guild.id
+        except AttributeError:
+            for g in self.games:
+                if user.id in self.games[g].players:
+                    guildID = g
+
+
         for guildID in self.games:
-            if user in self.games[guildID].players:
+            if user.id in self.games[guildID].players:
                 game = self.games[guildID]
 
         return game
@@ -408,27 +415,23 @@ class MafiaGames:
 
     # Finished
     def find_guild_game(self, guildID:int):
-        print(self.games)
-        if str(guildID) in self.games:
-            return self.games[str(guildID)]
+        if guildID in self.games:
+            return self.games[guildID]
         return None
 
     # Finished
     def create_game(self, channel:discord.TextChannel, host:discord.Member):
         guild = channel.guild
-        if not str(guild.id) in self.games:
-            print("Here we go")
+        if not guild.id in self.games:
             game = Game(self.bot, channel, host)
             self.games[guild.id] = game
-            print(game)
-            print(self.games)
             return game
         else:
             raise AlreadyPlayingError("There is already an ongoing game in the guild")
 
 
     def delete_game(self, guildID: int):
-        guildID = str(guildID)
+        guildID = guildID
         try:
             del self.games[guildID]
         except KeyError:
@@ -448,7 +451,7 @@ class Mafia(commands.Cog):
 
     @commands.command(aliases=['play mafia', 'playm', 'pm'])
     async def playmafia(self, ctx):
-        if self.games_manager.find_guild_game(ctx.guild):
+        if self.games_manager.find_guild_game(ctx.guild.id):
             await ctx.send("A game is already running in the server")
             return
         if self.games_manager.find_player_game(ctx.author):
@@ -458,13 +461,16 @@ class Mafia(commands.Cog):
             return
 
         game = self.games_manager.create_game(ctx.channel, ctx.author)
+        
         embed = discord.Embed(description="Join a game of mafia! Starts in 45 seconds if there are 5-20 players.", colour=ctx.author.colour or discord.Colour.blurple())
         embed.set_author(name=f"React to join {ctx.author.name}'s game of mafia", icon_url=ctx.author.avatar_url)
         embed.add_field(name="Mafia count:", value="1")
         embed.add_field(name="Total players:", value="1")
+        
         m = await ctx.send(embed=embed)
         await m.add_reaction("✅")
         self.join_msgs.append(m.id)
+        
         await asyncio.sleep(45)
         del self.join_msgs[0]
 
@@ -493,12 +499,12 @@ class Mafia(commands.Cog):
         
         game = self.games_manager.find_guild_game(user.guild.id)
         try:
-            if not self.games_manager.find_player_game(user.id):
-                game.add_player(user)
+            if not self.games_manager.find_player_game(user):
+                await game.add_player(user)
                 embed = reaction.message.embeds[0]
                 embed.clear_fields()
                 embed.add_field(name="Mafia count:", value=int(len(game.players)/3.5))
-                embed.add_field(name="Total players:", vlaue=len(game.players))
+                embed.add_field(name="Total players:", value=len(game.players))
                 await reaction.message.edit(embed=embed)
             else:
                 await user.send("You are already in a game on another server!")
@@ -514,15 +520,15 @@ class Mafia(commands.Cog):
         if not isinstance(ctx.channel, discord.DMChannel):
             return
         
-        game = self.games_manager.find_player_game(ctx.author.id)
+        game = self.games_manager.find_player_game(ctx.author)
         if game.night:
-            if game.players[str(ctx.author.id)] == "mafia":
+            if game.players[ctx.author.id] == "mafia":
                 for m in game.players:
                     if game.players[m] == "mafia":
                         u = self.bot.fetch_user(int(m))
                         await u.send(f"**[MAFIA]** `{ctx.author.name + ctx.author.discriminator}`: {ctx.content}")
 
-            elif game.players[str(ctx.author.id)] == "investigator":
+            elif game.players[ctx.author.id] == "investigator":
                 for i in game.players:
                     if game.players[i] == "investigator":
                         u = self.bot.fetch_user(int(i))
