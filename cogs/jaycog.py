@@ -98,7 +98,7 @@ class JayCog(commands.Cog):
             return
         
         if reaction.emoji not in self.notes:
-            await reaction.delete()
+            await reaction.remove(user)
 
         if not user.voice.channel.id:
             embed = discord.Embed(colour=0xff0000)

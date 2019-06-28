@@ -488,7 +488,7 @@ class Mafia(commands.Cog):
         if not reaction.message.id in self.join_msgs: return
         if user.bot: return
         if reaction.emoji != "✅":
-            await reaction.delete()
+            await reaction.remove(user)
             return
         
         game = self.games_manager.find_guild_game(user.guild.id)
