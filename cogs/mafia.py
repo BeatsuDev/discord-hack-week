@@ -296,7 +296,7 @@ Be careful with sharing what you know however! Or else, next night you may be de
         # Regional Indicator A
         reg_A = 0x0001f1e6
         for i in range(20):
-            e = f'\\U{base + i :08x}'.encode().decode("unicode-escape")
+            e = f'\\U{reg_A + i :08x}'.encode().decode("unicode-escape")
             regletters.append(e)
 
 
@@ -313,7 +313,7 @@ Be careful with sharing what you know however! Or else, next night you may be de
         embed = discord.Embed(title="Vote for who to lynch", description=desc, colour=discord.Colour.blurple())
         vote_msg = await self.channel.send(embed=embed)
         for i in range(len(self.players)):
-            await vote_msg.add_reaction({regletters[i]})
+            await vote_msg.add_reaction(regletters[i])
 
         await asyncio.sleep(15)
         counts = {}
