@@ -53,6 +53,7 @@ class JayCog(commands.Cog):
             embed = discord.Embed(colour=0xff0000)
             embed.set_author(icon_url=ctx.message.author.avatar_url, name=ctx.message.author.display_name + ", you're not in a vc! Please connect to one before playing the piano")
             await ctx.send(embed=embed)
+            return
 
         self.notes = ['🎹', '🇦', '🇧', '🇨', '🇩', '🇪', '🇫', '🇬']
         msg = """Heyy {} it's Piano Time! It's Discord's Hack Week, Let's get Frizzy! 
