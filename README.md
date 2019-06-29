@@ -7,7 +7,7 @@ Frizzler is a discord entertainment bot made for Discord Hack Week (24/06 to 28/
 To make the pianotime command work, you'll need to install [FFmpeg](https://ffmpeg.org/download.html).
 
 ## Usage
-f! prefix
+e! prefix
 
 
 |    Command    |  Description  |
